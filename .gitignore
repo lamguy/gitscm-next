@@ -4,11 +4,16 @@
 # or operating system, you probably want to add a global ignore instead:
 #   git config --global core.excludesfile ~/.gitignore_global
 
-# Ignore bundler config
 .rbenv-version
+.env
+
+# Ignore bundler config
 /.bundle
 /bin
 /vendor/gems
+
+
+config/database.yml
 
 # Ignore the default SQLite database.
 /db/*.sqlite3*
@@ -19,3 +24,11 @@
 .sass-cache/
 
 .DS_Store
+
+#Ignore vim swpfiles
+*.swp
+*.swo
+
+/public/*.zip
+
+node_modules/

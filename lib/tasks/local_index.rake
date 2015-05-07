@@ -1,15 +1,15 @@
-require 'asciidoc'
+require 'asciidoctor'
 
 # fill in the db from a local git clone
 task :local_index => :environment do
   template_dir = File.join(Rails.root, 'templates')
-  dir = ENV["GIT_REPO"]
+  dir     = ENV["GIT_REPO"]
   rebuild = ENV['REBUILD_DOC']
-  rerun = ENV['RERUN'] || false
+  rerun   = ENV['RERUN'] || false
 
   Dir.chdir(dir) do
     # find all tags
-    tags = `git tag | grep v1`.strip.split("\n")
+    tags = `git tag | egrep 'v1|v2'`.strip.split("\n")
     tags = tags.select { |tag| tag =~ /v\d([\.\d])+$/ }  # just get release tags
 
     if rebuild
@@ -48,27 +48,9 @@ task :local_index => :environment do
         mode, type, sha, path = e.split(' ')
         [path, sha, type]
       end
-      tree = tree.select { |t| t.first =~ /^(git.*|everyday|howto-index|user-manual)\.txt/ }
+      tree = tree.select { |t| t.first =~ /^(git.*|everyday|howto-index|user-manual|diff.*|fetch.*|merge.*|rev.*|pretty.*|pull.*)\.txt/ }
 
       puts "Found #{tree.size} entries"
-
-      # generate this tag's command list for includes
-      cmd_list = `git cat-file blob #{tag}:command-list.txt`.split("\n").reject{|l| l =~ /^#/}.inject({}) do |list, cmd|
-        name, kind, attr = cmd.split(/\s+/)
-        list[kind] ||= []
-        list[kind] << [name, attr]
-        list
-      end
-      categories = cmd_list.keys.inject({}) do |list, category|
-        links = cmd_list[category].map do |cmd, attr|
-          if match = `git cat-file blob #{tag}:Documentation/#{cmd}.txt`.match(/NAME\n----\n\S+ - (.*)$/)
-            "linkgit:#{cmd}[1]::\n\t#{attr == 'deprecated' ? '(deprecated) ' : ''}#{match[1]}\n"
-          end
-        end
-
-        list.merge!("cmds-#{category}.txt" => links.compact.join("\n"))
-      end
-
       doc_limit = ENV['ONLY_BUILD_DOC']
 
       tree.each do |entry|
@@ -80,25 +62,22 @@ task :local_index => :environment do
         puts "   build: #{path}"
 
         content = `git cat-file blob #{sha}`.chomp
-        asciidoc = Asciidoc::Document.new(path, content) do |inc|
-          if categories.has_key?(inc)
-            categories[inc]
-          else
-            if match = inc.match(/^\.\.\/(.*)$/)
-              git_path = match[1]
-            else
-              git_path = "Documentation/#{inc}"
-            end
-
-            `git cat-file blob #{tag}:#{git_path}`
-          end
+        content.gsub!(/include::(\S+)\.txt/) do |line|
+          line.gsub!("include::", "")
+          `git cat-file blob #{tag}:Documentation/#{line}`
         end
+        asciidoc = Asciidoctor::Document.new(content, templates_dir: template_dir)
         asciidoc_sha = Digest::SHA1.hexdigest( asciidoc.source )
 
         doc = Doc.where(:blob_sha => asciidoc_sha).first_or_create
         if rerun || !doc.plain || !doc.html
+          html = asciidoc.render
+          html.gsub!(/linkgit:(\S+)\[(\d+)\]/) do |line|
+            x = /^linkgit:(\S+)\[(\d+)\]/.match(line)
+            line = "<a href='/docs/#{x[1]}'>#{x[1]}[#{x[2]}]</a>"
+          end
           doc.plain = asciidoc.source
-          doc.html  = asciidoc.render(template_dir)
+          doc.html  = html
           doc.save
         end
         dv = DocVersion.where(:version_id => stag.id, :doc_file_id => file.id).first_or_create
@@ -109,4 +88,3 @@ task :local_index => :environment do
     end
   end
 end
-

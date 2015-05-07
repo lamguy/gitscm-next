@@ -1,4 +1,4 @@
-require 'asciidoc'
+require 'asciidoctor'
 require 'octokit'
 require 'time'
 require 'digest/sha1'
@@ -20,7 +20,7 @@ task :preindex => :environment do
   end
 
   # find all tags
-  tags = @octokit.tags( repo ).select { |tag| !tag.nil? && tag.name =~ /^v1[\d\.]+$/ }  # just get release tags
+  tags = @octokit.tags( repo ).select { |tag| !tag.nil? && tag.name =~ /v\d([\.\d])+$/ }  # just get release tags
 
   if rebuild
     tags = tags.select { |t| t.name == rebuild }
@@ -41,8 +41,8 @@ task :preindex => :environment do
     commit_info = @octokit.commit( repo, tag.name )
     commit_sha = commit_info.sha
     tree_sha = commit_info.commit.tree.sha
-    ts = Time.parse( commit_info.commit.committer.date )
-
+    # ts = Time.parse( commit_info.commit.committer.date )
+    ts = commit_info.commit.committer.date
     # save metadata
     puts "#{tag.name}: #{ts}, #{commit_sha[0, 8]}, #{tree_sha[0, 8]}"
     stag.commit_sha = commit_sha
@@ -53,39 +53,9 @@ task :preindex => :environment do
     # find all the doc entries
     tree_info = @octokit.tree( repo, tree_sha, :recursive => true )
     tag_files = tree_info.tree
-    doc_files = tag_files.select { |ent| ent.path =~ /^Documentation\/(git.*|everyday|howto-index|user-manual)\.txt/ }
+    doc_files = tag_files.select { |ent| ent.path =~ /^Documentation\/(git.*|everyday|howto-index|user-manual|diff.*|fetch.*|merge.*|rev.*|pretty.*|pull.*)\.txt/ }
 
     puts "Found #{doc_files.size} entries"
-
-    # Generate this tag's command list for includes
-    puts "building command list"
-    if cmd_file = tag_files.detect { |ent| ent.path == 'command-list.txt' }
-      commands = blob_content[cmd_file.sha]
-      cmd_list = commands.split( "\n" ).reject { |l| l =~ /^#/ }.inject( {} ) do |list, cmd|
-        name, kind, attr = cmd.split( /\s+/ )
-        list[kind] ||= []
-        list[kind] << [name, attr]
-        list
-      end
-    else
-      cmd_list = {}
-    end
-
-    # Build virtual category include files for inclusion by actual checked-in files
-    puts "building include files"
-    categories = cmd_list.keys.inject({}) do |list, category|
-      if category_file = tag_files.detect { |ent| ent.path == "Documentation/#{category}.txt" }
-        links = cmd_list[category].map do |cmd, attr|
-          if match = blob_content[category_file.sha].match( /NAME\n----\n\S+ - (.*)$/ )
-            "linkgit:#{cmd}[1]::\n\t#{attr == 'deprecated' ? '(deprecated) ' : ''}#{match[1]}\n"
-          end
-        end
-
-        list.merge!("cmds-#{category}.txt" => links.compact.join("\n"))
-      else
-        list
-      end
-    end
 
     doc_limit = ENV['ONLY_BUILD_DOC']
     doc_files = doc_files.select { |df| df.path =~ /#{doc_limit}/ } if doc_limit
@@ -97,29 +67,24 @@ task :preindex => :environment do
       puts "   build: #{path}"
 
       content = blob_content[entry.sha]
-      asciidoc = Asciidoc::Document.new(path, content) do |inc|
-        if categories.has_key?(inc)
-          categories[inc]
-        else
-          if match = inc.match(/^\.\.\/(.*)$/)
-            git_path = match[1]
-          else
-            git_path = "Documentation/#{inc}"
-          end
-
-          if inc_file = tag_files.detect { |f| f.path == git_path }
-            blob_content[inc_file.sha]
-          else
-            ''
-          end
+      content.gsub!(/include::(\S+)\.txt/) do |line|
+        line.gsub!("include::","")
+        category_file = tag_files.detect { |ent| ent.path == "Documentation/#{line}" }
+        if category_file
+          blob_content[category_file.sha]
         end
       end
+      asciidoc = Asciidoctor::Document.new(content, template_dir: template_dir)
       asciidoc_sha = Digest::SHA1.hexdigest( asciidoc.source )
-
       doc = Doc.where( :blob_sha => asciidoc_sha ).first_or_create
       if rerun || !doc.plain || !doc.html
+        html = asciidoc.render
+        html.gsub!(/linkgit:(\S+)\[(\d+)\]/) do |line|
+          x = /^linkgit:(\S+)\[(\d+)\]/.match(line)
+          line = "<a href='/docs/#{x[1]}'>#{x[1]}[#{x[2]}]</a>"
+        end
         doc.plain = asciidoc.source
-        doc.html  = asciidoc.render( template_dir )
+        doc.html  = html 
         doc.save
       end
       dv = DocVersion.where(:version_id => stag.id, :doc_file_id => file.id).first_or_create

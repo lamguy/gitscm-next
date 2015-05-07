@@ -1,6 +1,8 @@
 class DocController < ApplicationController
 
-  before_filter :book_resource, :only => [:index]
+  before_filter :set_doc_file, only: [:man]
+  before_filter :set_doc_version, only: [:man]
+  before_filter :set_book, only: [:index]
 
   def index
     @videos = VIDEOS
@@ -14,34 +16,17 @@ class DocController < ApplicationController
   end
 
   def man
-    latest = Rails.cache.read("latest-version")
-    filename = params[:file]
-    version = params[:version] # || latest
-    @cache_key = "man-v4-#{filename}-#{latest}-#{version}"
-    @page_title = "Git - #{filename} Documentation"
-
-    if !Rails.cache.exist?("views/" + @cache_key)
-      doc_version = doc_for filename, version
-      if doc_version.nil?
-        filename = "git-#{filename}"
-        doc_version = doc_for filename, version
-        redirect_to doc_file_url(filename) unless doc_version.nil?
-      end
-
-      if doc_version.nil?
-        redirect_to '/docs'
-      else
-        key = "version-changes-#{doc_version.id}"
-        @versions = Rails.cache.fetch(key) do
-          DocVersion.version_changes(filename, 20)
-        end
-        @last = DocVersion.last_changed(filename)
-        @related = DocVersion.get_related(filename, 8)
-        @version = doc_version.version
-        @file = doc_version.doc_file
-        @doc = doc_version.doc
-      end
+    return redirect_to docs_path unless @doc_file
+    unless @doc_version.respond_to?(:version)
+      return redirect_to doc_file_path(file: @doc_file.name)
     end
+    @version  = @doc_version.version
+    @doc      = @doc_version.doc
+    @page_title = "Git - #{@doc_file.name} Documentation"
+    return redirect_to docs_path unless @doc_version
+    @last     = @doc_file.doc_versions.latest_version
+    # @versions = DocVersion.version_changes(@doc_file.name)
+    # @related = DocVersion.get_related(filename, 8)
   end
 
   def related_update
@@ -103,17 +88,27 @@ class DocController < ApplicationController
 
   private
 
-  def book_resource
-    @book ||= Book.where(:code => (params[:lang] || "en")).first
+  def set_book
+    @book ||= Book.where(:code => (params[:lang] || "en")).order("percent_complete, edition DESC").first
     raise PageNotFound unless @book
-    @book
   end
 
-  def doc_for(filename, version = nil)
+  def set_doc_file
+    file  = params[:file]
+    if DocFile.exists?(name: file)
+      @doc_file = DocFile.with_includes.where(name: file).limit(1).first
+    elsif DocFile.exists?(name: "git-#{file}")
+      return redirect_to doc_file_path(file: "git-#{file}")
+    end
+  end
+
+  def set_doc_version
+    return unless @doc_file
+    version = params[:version]
     if version
-      doc_version = DocVersion.for_version filename, version
+      @doc_version = @doc_file.doc_versions.for_version(version)
     else
-      doc_version = DocVersion.latest_for filename
+      @doc_version = @doc_file.doc_versions.latest_version
     end
   end
 

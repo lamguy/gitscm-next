@@ -4,7 +4,7 @@ class DownloadsController < ApplicationController
   end
 
   def latest
-    latest = Rails.cache.read("latest-version")
+    latest = Version.latest_version.name
     render :text => latest
   end
 
@@ -27,10 +27,10 @@ class DownloadsController < ApplicationController
     @platform = 'windows' if @platform == 'win'
     if @platform == 'windows' || @platform == 'mac'
       if @platform == 'windows'
-        @project_url  = "http://msysgit.github.com/"
+        @project_url  = "https://msysgit.github.io/"
         @source_url   = "https://github.com/msysgit/git/"
       else
-        @project_url = "http://code.google.com/p/git-osx-installer/"
+        @project_url = "http://sourceforge.net/projects/git-osx-installer/"
         @source_url   = "https://github.com/git/git/"
       end
 
