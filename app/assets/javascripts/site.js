@@ -11,7 +11,6 @@ $(document).ready(function() {
   Downloads.init();
   DownloadBox.init();
   AboutContent.init();
-  FlippyBook.init();
 
   var _gauges = _gauges || [];
   (function() {
@@ -25,6 +24,20 @@ $(document).ready(function() {
     s.parentNode.insertBefore(t, s);
   })();
 });
+
+function onPopState(fn) {
+  if (window.history && window.history.pushState) {
+    return $(window).bind('popstate', function(event) {
+      var section;
+      initialPop = !popped && location.href === initialURL;
+      popped = true;
+      if (initialPop) {
+        return;
+      }
+      fn();
+    });
+  }
+}
 
 var DownloadBox = {
   init: function() {
@@ -216,32 +229,58 @@ var Forms = {
   }
 }
 var Downloads = {
-  userOS: '',
-
   init: function() {
     Downloads.observeGUIOSFilter();
+    Downloads.observePopState();
+    Downloads.filterGUIS();
+  },
+
+  getOSFilter: function() {
+    var os = location.href.substring(location.href.lastIndexOf("/") + 1);
+    return os === 'linux' || os === 'mac' || os === 'windows'
+      ? os
+      : '';
+  },
+
+  filterGUIS: function() {
+    var osFilter = Downloads.getOSFilter();
+    var capitalizedOS = osFilter.charAt(0).toUpperCase() + osFilter.slice(1);
+    $('a.gui-os-filter').not("[data-os='"+osFilter+"']").removeClass('selected');
+    $('a.gui-os-filter').filter("[data-os='"+osFilter+"']").addClass('selected');
+
+    if (osFilter === '') {
+      $('ul.gui-thumbnails li').removeClass("masked");
+      $('#os-filter-count').hide();
+    }
+    else {
+      $('ul.gui-thumbnails li').filter("."+osFilter).removeClass('masked');
+      $('ul.gui-thumbnails li').not("."+osFilter).addClass('masked');
+      var osCount = $('ul.gui-thumbnails li' + '.' + osFilter).length;
+      $('#os-filter-count strong').html(osCount);
+      $('#os-filter-count .os').html(capitalizedOS);
+      $('#os-filter-count').show();
+    }
   },
 
   observeGUIOSFilter: function() {
-    $('a#gui-os-filter').click(function(e) {
+    $('a.gui-os-filter').click(function(e) {
       e.preventDefault();
-      Downloads.userOS = $(this).attr('data-os');
-      var capitalizedOS = Downloads.userOS.charAt(0).toUpperCase() + Downloads.userOS.slice(1);
-      if ($(this).hasClass('filtering')) {
-        $('ul.gui-thumbnails li').switchClass("masked", "", 200);
-        $(this).html('Only show GUIs for my OS ('+ capitalizedOS +')');
-        $(this).removeClass('filtering');
-        $('#os-filter-count').hide();
+      var os = $(this).attr('data-os');
+
+      if (window.history && window.history.pushState) {
+        var url = os === ''
+          ? '/downloads/guis/'
+          : '/download/gui/'+os;
+        history.pushState(null, $(this).html(), url);
       }
-      else {
-        $('ul.gui-thumbnails li').not("."+Downloads.userOS).switchClass("", "masked", 200);
-        $(this).html('Show GUIs for all OSes');
-        $(this).addClass('filtering');
-        var osCount = $('ul.gui-thumbnails li' + '.' + Downloads.userOS).length;
-        $('#os-filter-count strong').html(osCount);
-        $('#os-filter-count .os').html(capitalizedOS);
-        $('#os-filter-count').show();
-      }
+
+      Downloads.filterGUIS();
+    });
+  },
+
+  observePopState: function() {
+    onPopState(function() {
+      Downloads.filterGUIS();
     });
   }
 }
@@ -259,18 +298,10 @@ var AboutContent = {
   },
 
   observePopState: function() {
-    if (window.history && window.history.pushState) {
-      return $(window).bind('popstate', function(event) {
-        var section;
-        initialPop = !popped && location.href === initialURL;
-        popped = true;
-        if (initialPop) {
-          return;
-        }
-        section = AboutContent.getSection();
-        return AboutContent.showSection(section);
-      });
-    }
+    onPopState(function() {
+      section = AboutContent.getSection();
+      return AboutContent.showSection(section);
+    });
   },
 
   getSection: function(href) {
@@ -304,46 +335,4 @@ var AboutContent = {
   }
 }
 
-var FlippyBook = {
-  threeDee: false,
-
-  init: function() {
-    FlippyBook.initBrowsers();
-    FlippyBook.observeOpenCloseClicks();
-  },
-
-  initBrowsers: function() {
-    // only allow webkit since moz 3d transforms are still
-    // janky when using z-index
-    if (Modernizr.webkit) {
-      FlippyBook.threeDee = true;
-      $('#book-container').addClass('three-dee');
-    }
-    $('#about-book').addClass('visible');
-  },
-
-  observeOpenCloseClicks: function() {
-    $('#book-cover-outside, #open-book').click(function(e) {
-      e.preventDefault();
-      $('#book-cover').removeClass('close').addClass('open');
-      $('#book-intro').css('z-index', '');
-      if (!FlippyBook.threeDee) {
-        $('#book-cover-inside').show();
-        $('#book-inside-page').show();
-      }
-    });
-    $('#about-book').click(function(e) {
-      e.preventDefault();
-      $('#book-cover').removeClass('open').addClass('close');
-      if (FlippyBook.threeDee) {
-        var t = setTimeout ("$('#book-intro').css('z-index', 100)", 1000);
-      }
-      else {
-        $('#book-cover-inside').hide();
-        $('#book-inside-page').hide();
-        $('#book-intro').css('z-index', 100);
-      }
-    });
-  }
-}
 

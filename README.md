@@ -1,6 +1,6 @@
-# Git Homepage [![Build Status](https://travis-ci.org/git/git-scm.com.png?branch=master)](https://travis-ci.org/git/git-scm.com)
+# Git Homepage [![Build Status](https://travis-ci.org/git/git-scm.com.svg?branch=master)](https://travis-ci.org/git/git-scm.com)
 
-This is the web application for the [git-scm.com](http://git-scm.com) site.  It is meant to be the
+This is the web application for the [git-scm.com](https://git-scm.com) site.  It is meant to be the
 first place a person new to Git will land and download or learn about the
 Git SCM system.
 
@@ -10,12 +10,14 @@ This app is written in Ruby on Rails and deployed on Heroku.
 
 You'll need a Ruby environment to run Rails.  First do:
 
-    $ rvm use 2.1.2
+    $ rvm use 2.1.8
     $ bundle install
 
 Then you need to create the database structure:
 
     $ rake db:migrate
+    
+Alternatively you can run the script at `script/bootstrap` which will set up Ruby dependencies and the local SQLite database.
 
 Now you'll want to populate the man pages.  You can do so from a local Git
 source clone like this:
@@ -33,13 +35,21 @@ Now you need to get the latest downloads for the downloads pages:
     $ rake downloads
 
 Now you'll probably want some book data. You'll have
-to have access to the [Pro Git project on GitHub](https://github.com/progit/progit) through the API.
+to have access to the [Pro Git project on GitHub](https://github.com/progit/progit2) through the API.
 
     $ export API_USER=github_username
     $ export API_PASS=github_password
-    $ rake remote_genbook
+    $ rake remote_genbook2
+    
+If you have 2FA enabled, you'll need to create a [Personal Access Token](https://help.github.com/articles/creating-an-access-token-for-command-line-use/).    
 
-That will generate the book content from the Markdown files fetched from the online repository and post it to the Rails server database.
+That will generate the book content from the Asciidoc files fetched from the online repository and post it to the Rails server database. You can select a specific language by indicating it in the `GENLANG` environment variable:
+
+    $ GENLANG=zh rake remote_genbook2
+
+Alternatively, you can get the book content from a repository on your computer by specifying the path in the `GENPATH` environment variable to the `local_genbook2` target:
+
+    $ GENLANG=fr GENPATH=../progit2-fr rake local_genbook2 
 
 Now you can run the Rails site to take a look.  Specify an UPDATE_TOKEN so you
 can use the world's stupidest authentication mechanism:
@@ -72,4 +82,4 @@ The source code for the site is licensed under the MIT license, which you can fi
 the MIT-LICENSE.txt file.
 
 All graphical assets are licensed under the
-[Creative Commons Attribution 3.0 Unported License](http://creativecommons.org/licenses/by/3.0/).
+[Creative Commons Attribution 3.0 Unported License](https://creativecommons.org/licenses/by/3.0/).

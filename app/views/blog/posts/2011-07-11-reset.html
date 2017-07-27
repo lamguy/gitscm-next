@@ -1,6 +1,7 @@
 ---
 layout: post
 title: Reset Demystified
+author:
 ---
 
 <p>One of the topics that I didn't cover in depth in the Pro Git book is the
@@ -65,10 +66,10 @@ Here is an example of getting the actual directory listing and SHA checksums
 for each file in the HEAD snapshot:</p>
 
 <pre>
-$ cat .git/HEAD 
+$ cat .git/HEAD
 ref: refs/heads/master
 
-$ cat .git/refs/heads/master 
+$ cat .git/refs/heads/master
 e9a570524b63d2a2b3a7c3325acf5b89bbeb131e
 
 $ git cat-file -p e9a570524b63d2a2b3a7c3325acf5b89bbeb131e
@@ -234,7 +235,7 @@ would have done.</p>
 <p>Note that if you run <code>git status</code> now you'll see in green the
 difference between the Index and what the new HEAD is.</p>
 
-<p>The next thing <code>reset</code> will do 
+<p>The next thing <code>reset</code> will do
 is to update the Index with the contents of whatever tree HEAD now
 points to so they're the same.</p>
 
@@ -306,7 +307,7 @@ with previously committed content this way.
 
 <p>So, assume we run <code>git reset file.txt</code>.  This assumes, since you
 did not specify a commit SHA or branch that points to a commit SHA, and that you
-provided no reset option, that you are typing the shorthand for 
+provided no reset option, that you are typing the shorthand for
 <code>git reset --mixed HEAD file.txt</code>, which will:
 
 <ul>
@@ -335,7 +336,7 @@ Index by running something like <code>git reset eb43bf file.txt</code>.
 
 <p>So what does that mean?  That functionally does the same thing as if we had
 reverted the content of the file to <b>v1</b>, ran <code>git add</code> on it,
-then reverted it back to to <b>v3</b> again.  If we run <code>git commit</code>,
+then reverted it back to <b>v3</b> again.  If we run <code>git commit</code>,
 it will record a change that reverts that file back to <b>v1</b>, even though
 we never actually had it in our Working Directory again.</p>
 
@@ -383,7 +384,7 @@ added the new file and modified the first to it's final state.
 <p>Finally, some of you may wonder what the difference between <code>checkout</code>
 and <code>reset</code> is. Well, like <code>reset</code>, <code>checkout</code>
 manipulates the three trees and it is a bit different depending on whether you
-give the command a file path or not.  So, let's look at both examples seperately.
+give the command a file path or not.  So, let's look at both examples separately.
 </p>
 
 <h3>git checkout [branch]</h3>

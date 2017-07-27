@@ -1,16 +1,14 @@
 source 'https://rubygems.org'
-#ruby "2.1.2"
+ruby "2.1.8"
 
-gem 'rails', '4.2'
+gem 'rails', '4.2.6'
 gem 'rails_12factor', group: :production
 
-gem 'asciidoctor', '>=1.5.0'
-gem 'dalli'
+gem 'asciidoctor', '>=1.5.4'
+gem 'redis-rails'
 gem 'exceptional'
 gem 'faraday'
 gem 'faraday_middleware'
-gem 'memcachier'
-gem 'newrelic_rpm'
 gem 'octokit'
 gem "pg"
 gem 'rack-timeout'
@@ -48,6 +46,7 @@ group :development, :test do
   gem "sqlite3"
   gem 'byebug'
   gem 'ruby-prof'
+  gem 'bullet'
 end
 
 group :test do

@@ -1,6 +1,7 @@
 ---
 layout: post
 title: Undoing Merges
+author:
 ---
 
 I would like to start writing more here about general Git tips, tricks and
@@ -25,14 +26,14 @@ You have a couple of topic branches that you have developed and then integrated
 together by a series of merges.  Now you want to revert something back in the
 history, say 'C10' in this case.
 
-The first way to solve the problem could be to rewind 'master' back to C8 and
+The first way to solve the problem could be to rewind 'master' back to C3 and
 then merge the remaining two lines back in again.  This requires that anyone
 you're collaborating with knows how to handle rewound heads, but if that's not
 an issue, this is a perfectly viable solution.  This is basically how the 'pu'
 branch is handled in the Git project itself.
 
 	$ git checkout master
-	$ git reset --hard [sha_of_C8]
+	$ git reset --hard [sha_of_C3]
 	$ git merge jk/post-checkout
 	$ git merge db/push-cleanup
 
@@ -53,7 +54,7 @@ history looks more like this:
 <img src="/images/unmerge3.png">
 
 Now you either have to revert one of the merges, or go back, remerge and then
-cherry-pick the remaining changes again (C9 and C10 in this case), which is
+cherry-pick the remaining changes again (C10 and C11 in this case), which is
 confusing and difficult, especially if there are a lot of commits after those
 merges.
 
@@ -65,7 +66,7 @@ All you have to do is specify the merge commit you want to revert and the parent
 line you want to keep.  Let's say that we want to revert the merge of the
 `jk/post-checkout` line.  We can do so like this:
 
-	$ git revert -m 1 [sha_of_C8]
+	$ git revert -m 1 [sha_of_C9]
 	Finished one revert.
 	[master 88edd6d] Revert "Merge branch 'jk/post-checkout'"
 	 1 files changed, 0 insertions(+), 2 deletions(-)
@@ -118,7 +119,7 @@ in the meantime, we can just re-merge it.
 
 So, I hope that's helpful.  This can be particularly useful if you have a merge-heavy
 development process.  In fact, if you work mostly in topic branches before
-merging for intergration purposes, you may want to use the `git merge --no-ff`
+merging for integration purposes, you may want to use the `git merge --no-ff`
 option so that the first merge is not a fast forward and can be reverted out
 in this manner.
 

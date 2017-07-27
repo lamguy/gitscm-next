@@ -220,7 +220,7 @@ code {
   background-color: #fff;
   border: solid 1px #efeee6;
   color: $orange;
-  font-family: $fixed-width-font-family !important;
+  font-family: $fixed-width-font-family;
   line-height: $fixed-width-line-height;
   overflow: auto;
 }
@@ -307,6 +307,14 @@ a.subtle-button {
   }
 }
 
+a.subtle-button.selected {
+  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #d7d7c1), color-stop(100%, #cbc9b4));
+  background-image: -webkit-linear-gradient(#d7d7c1, #cbc9b4);
+  background-image: -moz-linear-gradient(#d7d7c1, #cbc9b4);
+  background-image: -o-linear-gradient(#d7d7c1, #cbc9b4);
+  background-image: linear-gradient(#d7d7c1, #cbc9b4);
+}
+
 a#gui-os-filter {
   display: none;
   margin-top: 15px;
@@ -325,5 +333,5 @@ div.more {
 }
 
 .fixed {
-  font-family: $fixed-width-font-family !important;
+  font-family: $fixed-width-font-family;
 }

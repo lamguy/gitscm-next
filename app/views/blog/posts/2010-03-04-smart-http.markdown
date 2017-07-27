@@ -1,6 +1,7 @@
 ---
 layout: post
 title: Smart HTTP Transport
+author:
 ---
 
 When I was done writing Pro Git, the only transfer protocols that existed were
@@ -37,13 +38,13 @@ the server from bare Git repositories, since it knows the layout of the repo.
 This functionality is documented fairly completely in <a href="http://progit.org/book/ch9-6.html">Chapter 9</a>.
 Conversations over this protocol used to look like this:
 
-	$ git clone http://github.com/schacon/simplegit-progit.git
+	$ git clone https://github.com/schacon/simplegit-progit.git
 	Initialized empty Git repository in /private/tmp/simplegit-progit/.git/
 	got ca82a6dff817ec66f44342007202690a93763949
 	walk ca82a6dff817ec66f44342007202690a93763949
 	got 085bb3bcb608e1e8451d4b2432f8ecbe6306e7e7
-	Getting alternates list for http://github.com/schacon/simplegit-progit.git
-	Getting pack list for http://github.com/schacon/simplegit-progit.git
+	Getting alternates list for https://github.com/schacon/simplegit-progit.git
+	Getting pack list for https://github.com/schacon/simplegit-progit.git
 	Getting index for pack 816a9b2334da9953e530f27bcac22082a9f5b835
 	Getting pack 816a9b2334da9953e530f27bcac22082a9f5b835
 	 which contains cfda3bf379e4f8dba8717dee55aab78aef7f4daf
@@ -88,7 +89,7 @@ rather than just dumbly pushing out data.
 
 So, Smart-HTTP is basically just enabling the new CGI script that is provided
 with Git called
-<a href="http://www.kernel.org/pub/software/scm/git/docs/git-http-backend.html">`git-http-backend`</a>
+<a href="https://www.kernel.org/pub/software/scm/git/docs/git-http-backend.html">`git-http-backend`</a>
 on the server.  This CGI will read the path and
 headers sent by the revamped `git fetch` and `git push` binaries who have
 learned to communicate in a specific way with a smart server.  If the CGI sees
@@ -97,7 +98,7 @@ simply fall back to the dumb behavior (so it is backward compatible for reads
 with older clients).
 
 To set it up, it's best to walk through the instructions on the
-<a href="http://www.kernel.org/pub/software/scm/git/docs/git-http-backend.html">`git-http-backend`</a>
+<a href="https://www.kernel.org/pub/software/scm/git/docs/git-http-backend.html">`git-http-backend`</a>
 documentation page.  Basically, you have to install Git v1.6.6 or higher on
 a server with an Apache 2.x webserver (it has to be Apache, currently - other
 CGI servers don't work, last I checked).  Then you add something similar to this
@@ -120,14 +121,14 @@ block like this:
 That is all that is really required to get this running.  Now you have a smart
 http-based Git server that can do anonymous reads and authenticated writes with
 clients that have upgraded to 1.6.6 and above.
-How awesome is that?  The <a href="http://www.kernel.org/pub/software/scm/git/docs/git-http-backend.html">documentation</a>
+How awesome is that?  The <a href="https://www.kernel.org/pub/software/scm/git/docs/git-http-backend.html">documentation</a>
 goes over more complex examples, like making it work with GitWeb and accelerating
 the dumb fallback reads, if you're interested.
 
 <h2>Rack-based Git Server</h2>
 
 If you're not a fan of Apache or you're running some other web server, you may
-want to take a look at an app that I wrote called <a href="http://github.com/schacon/grack">Grack</a>, which
+want to take a look at an app that I wrote called <a href="https://github.com/schacon/grack">Grack</a>, which
 is a <a href="http://rack.rubyforge.org/">Rack</a>-based application for Smart-HTTP Git.
 <a href="http://rack.rubyforge.org/">Rack</a> is a generic webserver interface
 for Ruby (similar to WSGI for Python) that has adapters for a ton of web servers.
@@ -142,7 +143,7 @@ and JRuby, you can generate a WAR file that is deployable in any Java web
 application server (Tomcat, Glassfish, Websphere, JBoss, etc).
 
 So, if you don't use Apache and you are interested in a Smart-HTTP Git server,
-you may want to check out Grack.  At <a href="http://github.com">GitHub</a>, this
+you may want to check out Grack.  At <a href="https://github.com">GitHub</a>, this
 is the adapter we're using to eventually implement Smart-HTTP support for all
 the GitHub repositories. (It's currently a tad bit behind, but I'll be starting
 up on it again soon as I get it into production at GitHub - send pull requests if you
